@@ -40,7 +40,7 @@ examples:
     &sram4 {
       virtio_channel_0: memory@38000000 {
         /* "zrpc,channel" must always be present, regardless of backend */
-        compatible = "zrpc,virtio-channel";
+        compatible = "zrpc,virtio-channel",
                      "zrpc,channel";
 
         /* Attach RPC channel 0 to this device */

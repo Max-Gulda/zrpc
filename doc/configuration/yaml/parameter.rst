@@ -15,7 +15,7 @@ Name
 :type: string
 :required: yes
 
-The ``name`` entry specifies the name of the RPC parameter and must unique amongst the
+The ``name`` entry specifies the name of the RPC parameter and must be unique amongst the
 parameters. The string must be a valid
 `C identifier <https://en.cppreference.com/c/language/identifier>`__.
 
@@ -44,7 +44,7 @@ non-terminated data as well as output parameters.
 Integral Parameters
 *******************
 
-Declaring an integral parameters is trivial. Simply set the ``type`` property to one of the supports
+Declaring an integral parameters is trivial. Simply set the ``type`` property to one of the supported
 fundamental types. The parameters may be both ``volatile`` and --- as useless as it is --- ``const``
 qualified.
 
@@ -53,15 +53,15 @@ Integral parameters are used solely as input.
 Null-Terminated String
 **********************
 
-The zRPC core treats any parameter with the type ``char *`` or a cv-qualifie version thereof as a
-null-terminated string. As one might expect, the size of a string parameter is determined by the equivalent
-of calling ``strlen`` by default. Alternatively, one may associate the string with a :ref:`size <param_size>`
-in which case the zRPC core ignores potential null-terminators and uses the configured size instead. This
-is especially useful when using strings as output parameters.
+The zRPC core treats any parameter with the type ``char *`` or a cv-qualified version thereof as a
+null-terminated string. As one might expect, the default means of the determining the size of a string
+by the invoking the equivalent of ``strlen``. Alternatively, one may associate the string with a
+:ref:`size <param_size>` in which case the zRPC core ignores potential null-terminators and uses the
+configured size instead. This is especially useful when using strings as output parameters.
 
 .. warning::
 
-	Using fixed-size strings as input parameters causes the zRPC code to copy however many bytes
+	Using fixed-size strings as input parameters causes the zRPC core to copy however many bytes
 	has been configured from the address passed to the RPC. Make sure that this string is large enough
 	lest you will run the risk of everything from page faults to disclosing sensitive information.
 
@@ -78,8 +78,7 @@ for obvious reasons, require that the parameter is not ``const`` qualified. For 
 .. warning::
 
 	Terminating an output string is **truly** required if the input buffer was itself null-terminated as the
-	zRPC core leverages ``strlen`` to determine the size of all output strings save for the ones that are
-	fixed-size.
+	zRPC core leverages ``strlen`` to determine the size of all non-fixed-size output strings.
 
 Non-Terminated Pointer
 **********************
@@ -89,7 +88,7 @@ parameter specifying how many elements are available at the address. This is tru
 elements used as output parameters.
 
 The zRPC core supports both pointer to ``const``, pointer to ``volatile`` and pointer to ``const volatile``.
-Pointer parameters may be used as both input and output parameters.
+Pointer parameters may be used for both input and output.
 
 .. _param_size:
 
@@ -137,11 +136,11 @@ set. For example, if one were to do the admittedly nonsensical thing of implemen
 The above configuration instructs the zRPC generation scripts that there are ``n``
 elements at the address held in ``s``.
 
-The size parameter is should hold the number of elements in the array referred to by the
-pointer for which the size parameter is set. The means that, assuming the size parameter
-is named ``n``, the zRPC will process exactly ``n`` bytes should the pointer associated with
-the size parameter have the fundamental type ``uint8_t``. If, instead, the fundamental type
-were ``uint32_t``, the core would process ``sizeof(uint32_t) * n`` bytes.
+The size parameter should hold the number of elements in the array referred to by the
+pointer for which the size parameter is set. This means that, assuming the size parameter
+is named ``n`` and the fundmental type of the associated pointer is ``uint8_t``, the zRPC
+core will process exactly ``n`` bytes. If, instead, the fundamental type were ``uint32_t``,
+the core would process ``n * sizeof(uint32_t)`` bytes.
 
 In an attempt to dispel any doubts about the above, consider the following specification
 
@@ -172,8 +171,8 @@ In an attempt to dispel any doubts about the above, consider the following speci
 
 Assuming this RPC is invoked with the same value ``n`` passed to each size parameter
 ``u8s_size``, ``u16s_size`` and ``u32s_size``, the RPC will include ``n`` bytes from
-the at address in ``u8s``, ``2 * n`` bytes from the address at ``u16s`` and ``4 * n``
-bytes from the address at ``u32s``.
+the address in ``u8s``, ``2 * n`` bytes read from the address in ``u16s`` and ``4 * n``
+bytes from the address in ``u32s``.
 
 Reducing Duplication Using YAML Anchors
 ***************************************
@@ -181,9 +180,9 @@ Reducing Duplication Using YAML Anchors
 Having to specify the name of each size parameter in two or more places comes with the risk of the
 names diverging as a result of future changes. While this should be caught by the generation scripts,
 it remains an annoying eventuality, one that can be circumvented entirely by using YAML anchors. The
-following declares the same overcomplicated ``memset`` variant but uses a YAML anchor to declare the
-name of the size parameter in only one place. Instead of naming the parameter again, the second
-occurrence simply dereferences the anchor.
+following declares the same overcomplicated ``memset`` variant as above but uses a YAML anchor to
+declare the name of the size parameter in only one place. Instead of naming the parameter again,
+the second occurrence simply dereferences the anchor.
 
 .. code-block:: yaml
 	:caption: The inefficient ``memset`` again, this time with anchors and references.

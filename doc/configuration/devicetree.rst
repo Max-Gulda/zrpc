@@ -14,17 +14,16 @@ The device node may, naturally, include whichever properties are required by the
 particular backend. Common for all channels is, however, that each node must
 set the ``zrpc,channel-id`` integral property. This is used by the zRPC core to
 identify the appropriate backend for incoming and outgoing RPCs. Additionally, all
-zRPC device nodes **must** include ``"zrpc,channel"`` in their ``compatible`` arrays
+zRPC device nodes **must** include ``"zrpc,channel"`` in their ``compatible`` array
 to allow the core to perform this identification.
 
 It should be noted that the ``"zrpc,channel"`` does not single out a backend. As such,
-the ``compatible`` array of a backend device node should contain at least two strings ---
-one specified to whichever backend is used and the other being the aforementioned
+the ``compatible`` array of a backend device node always contains at least two strings ---
+one specific to whichever backend is used and the other being the aforementioned
 ``"zrpc,channel"``.
 
 To spell it out, the core matches the channel named ``primary`` in the following
-configuration excerpt against the first device with ``zrpc,channel`` in the
-``compatible`` array and ``zrpc,channel-id = <0>;`` set in its corresponding device node.
+configuration excerpt
 
 .. code-block:: yaml
 	:caption: Configuration excerpt defining an RPC channel named *primary*
@@ -35,11 +34,14 @@ configuration excerpt against the first device with ``zrpc,channel`` in the
 	    rpcs:
 	      # ...
 
+against the first device with ``zrpc,channel`` in the ``compatible`` array and
+``zrpc,channel-id = <0>;`` set in its corresponding device node.
+
 Matching channels and backends via IDs in this fashion allows the zRPC core to support
 multiple combinations of channels and backends simultaneously. This approach even allows
 for associating distinct channels with different instances of the same backend.
 
-An RPC device node may be described in fashion akin to
+An RPC device node may be described in  a fashion akin to
 
 .. literalinclude:: /../dts/bindings/rpc/zrpc,channel.yaml
 	:caption: zRPC device node sample

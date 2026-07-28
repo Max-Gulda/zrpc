@@ -8,8 +8,8 @@ along with the RPCs that may be sent over them --- are defined. The file is
 in YAML format and typically identical across all endpoints participating in
 RPC communication.
 
-The configuration file contains a sequence of RPC :ref:`channels <config_channel>`
-which each contain a sequence of :ref:`RPCs <config_rpc>` sent over them. The latter,
+The configuration file contains a sequence of RPC :ref:`channels <config_channel>`,
+each of which contains a sequence of :ref:`RPCs <config_rpc>` sent over it. The latter,
 in turn, contain zero or more :ref:`parameters <config_parameter>`.
 
 The following shows a small configuration example defining a single RPC channel
@@ -51,8 +51,8 @@ of the channel and the name of the RPC, each part separated by an underscore.
 Invoking the above function causes the host endpoint to emit an RPC encoded as descirbed
 :ref:`here <binary_format>` across the backend associated with RPC channel 0. See the
 description of the :ref:`devicetree configuration <config_dts>` for more information about
-how channels and backends are matched. When the remove endpoint receives the RPC, the latter
-is decoded before the zRPC core on the remote invokes ``zrpc_rpc0_set_time_serve`` which
+how channels and backends are matched. When the remote endpoint receives the RPC, the latter
+is decoded and ``zrpc_rpc0_set_time_serve`` invoked. This function has the following signature
 has the signature
 
 .. code-block:: c

@@ -29,7 +29,7 @@ Identifier
 
 The channel identifier ``id`` is used to match channels declared in the configuration with
 zRPC backends as described :ref:`here <config_dts>`. This identifier must be unique amongst
-all channels and should match value of the ``zrpc,channel-id`` property of exactly one
+all channels and should match the value of the ``zrpc,channel-id`` property of exactly one
 device node corresponding to a zRPC backend.
 
 RPCs
@@ -39,7 +39,7 @@ RPCs
 :type: Sequence of :ref:`RPCs <config_rpc>`
 :required: yes (may be empty)
 
-The ``rpcs`` sequence declares the RPC defined for the channel. Each entry therein corresponds
+The ``rpcs`` sequence declares the RPCs defined for the channel. Each entry therein corresponds
 to a single RPC that is sent either from the :ref:`host <concept_host>` to the :ref:`remote <concept_remote>`,
 vice versa, or in both directions. Refer to the :ref:`RPC <config_rpc>` section for more information.
 

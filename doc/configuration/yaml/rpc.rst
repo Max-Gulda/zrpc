@@ -3,7 +3,7 @@
 RPCs
 ====
 
-The ``rpcs`` sequence present in all :ref:`channels <config_channel>` entries
+The ``rpcs`` sequence present in all :ref:`channel <config_channel>` entries
 in in the zRPC configuration file lists the RPCs that may be sent over said
 channel. Each RPC must be given a name. Additionally, it may support parameters
 and be associated with both a brief and a more extensive description. Furthermore,
@@ -50,7 +50,7 @@ Description
 :type: string
 :required: no
 
-The ``description`` string is, must like the ``brief`` counterpart, used in the generated
+The ``description`` string is, much like the ``brief`` counterpart, used in the generated
 Doxygen documentation. More specifically, it is used with the equivalent of Doxygen's
 ``@details``.
 
@@ -83,10 +83,10 @@ which RPCs must be invoked with high frequency, especially if there is no way of
 an error anyway. This is where the ``want_reply`` property comes in handy.
 
 Including ``want_reply: False`` in an RPC mapping alters the behavior of the RPC core in a fashion
-that it emits the call to ``zrpc_recv`` altogether. Instead, the RPC is sent in a fire-and-forget
-fashion. Naturally, the value returned from an RPC with ``want_reply`` set to ``False`` on longer
-reflects the value returned by the peer handler function. Instead, it simply indicates whether or
-not the RPC could be sent.
+such that it omits the call to ``zrpc_recv`` altogether. Instead, the RPC is sent in a fire-and-forget
+fashion. Naturally, the value returned from an RPC with ``want_reply`` set to ``False`` no longer
+reflects the value returned by the peer servicer. Instead, it simply indicates whether or not the RPC
+could be sent.
 
 The option defaults to ``True``.
 
@@ -132,7 +132,7 @@ Including ``want_user_data`` as done in the following configuration
 	     description: |
 	       RPC channel 0.
 
-alters the signature of the services from
+alters the signature of the servicer from
 
 .. code-block:: c
 	:caption: Signature without user data
@@ -157,7 +157,7 @@ the signature of which is
 
 Accesses to the RPC-specific user data pointer --- both assignments through the generated
 ``rpc_{{ channel.name }}_{{ rpc.name }}_set_user_data`` function and potential accesses via in the RPC
-servicer --- is protected by one of ``1 << ZRPC_USER_DATA_BUCKET_SHIFT`` mutexes.
+servicer --- are protected by one of ``1 << ZRPC_USER_DATA_BUCKET_SHIFT`` mutexes.
 
 .. note::
 

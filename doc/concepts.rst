@@ -23,8 +23,8 @@ allow the two endpoints to send and receive data to and from each other.
 Channel
 -------
 
-An RPC channel is an arbitrary bond between two :ref:`endpoints <concept_endpoint>` and
-a set of RPCs that may be sent over it. In rough terms, a channel may be thought of as
+An RPC channel is an arbitrary association between two :ref:`endpoints <concept_endpoint>`
+and a set of RPCs that may be sent between the two. In rough terms, a channel may be thought of as
 an abstract tube through which the two endpoints may send objects of a certain shape.
 Said objects correspond to the RPCs defined for the channel.
 
@@ -51,14 +51,14 @@ its RPCs.
 While the main purpose of distinguishing between a channel host and
 :ref:`remote <concept_remote>` is to determine which RPCs are to be sent in which
 direction, certain :ref:`backends <concept_backend>` may use the host status for
-other purposes.
+other purposes as well.
 
 An endpoint is marked as host by the presence of the ``zrpc,host`` ``boolean`` property
 in its device node.
 
 .. note::
 
-	The channel host is **not** another temrs for the RPC server one might be
+	The channel host is **not** another term for the RPC server one might be
 	familiar with from e.g. `gRPC <https://grpc.io/>`__. zRPC is bidirectional
 	in the sense that either both or neither of the endpoints should be thought of
 	as a server.
@@ -76,8 +76,7 @@ Peer
 ----
 
 Just as in networking, or communication in general for that matter, the term peer
-refers to an entity receiving some sort of messages --- in this case RPCs --- from and
-sending messages to "us". A zRPC peer is always an :ref:`endpoint <concept_endpoint>`.
+refers to an entity with which a given :ref:`endpoint <concept_endpoint>` communicates.
 
 .. _concept_remote:
 
@@ -95,8 +94,8 @@ in its device node.
 .. note::
 
 	Just as the channel host both is and is not an RPC server, a channel remote both is
-	and is not an RPC client. As oxymoronic as that may come across, zRPC does not
-	operate using the client-server model employed by most RPC implementations. Instead, it
+	and is not an RPC client. As oxymoronic as that may seem, zRPC does not operate using
+	the client-server model employed by most RPC implementations at all. Instead, it
 	supports truly bidirectional RPCs.
 
 .. _concept_servicer:

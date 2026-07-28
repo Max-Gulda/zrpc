@@ -32,7 +32,7 @@ Consider the following configuration sample.
                   Notify the host that an event of type @p ev_type has occured.
                 origin: [ remote ]
 
-This declares a single RPC channel name ``ch0`` with identifier ``0``. Said channel
+This declares a single RPC channel named ``ch0`` with identifier ``0``. Said channel
 supports a single RPC named ``notify_event`` which is used by the
 :ref:`remote <concept_remote>` to notify the :ref:`host <concept_host>` of some event
 ``ev_type`` occurring. Refer to the :ref:`YAML file reference <config_yaml>` for an
@@ -48,7 +48,7 @@ The above configuration will result in the zRPC build system generating a functi
 	int zrpc_ch0_notify_event(uint32_t ev_type);
 
 Naturally, the receiving endpoint --- in this case the host --- must implement a function
-used to handle the incomnig RPC. zRPC reserves to such handler functions as
+used to handle the incomnig RPC. zRPC refers to such handler functions as
 :ref:`servicers <concept_servicer>`. A servicer has the exact same signature as its corresponding
 RPC [1]_ save for the suffix ``_serve`` being appended to the name. A trivial event handler
 servicer might look something akin to
@@ -66,7 +66,7 @@ servicer might look something akin to
 
 As is likely immediately apparent, the names of the generated functions are synthesized
 from the name of the channel, the name of the RPC along with the ``zrpc`` prefix. Refer to
-the :ref:`name synthesis reference <synthesis>` for a more details on the naming scheme.
+the :ref:`name synthesis section <synthesis>` for a more details on the naming scheme.
 
 Each channel supports up to 65535 distinct RPCs.
 
@@ -97,8 +97,8 @@ Consider the following RPC servicer
 	}
 
 If the :ref:`origin <concept_origin>` invokes the ``zrpc_ch0_put_data`` RPC at a rate higher than
-that with which messages are extracted from``msgq``, the latter will eventually become full at which
-point the call to ``k_msgq_put`` will fail with ``-ENOMSG``. In such an even, this return value is
+that with which messages are extracted from ``msgq``, the latter will eventually become full at which
+point the call to ``k_msgq_put`` fails with ``-ENOMSG``. In such an even, this return value is
 embedded in the RPC response and returned from the ``zrpc_ch0_put_data`` function invoked in the
 origin.
 
