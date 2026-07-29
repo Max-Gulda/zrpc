@@ -1009,7 +1009,7 @@ static int zrpc_virtio_init_ipm(struct device const *dev)
 
 	k_work_queue_start(work_q, data->ipm_stack, cfg->ipm_stack_size,
 		K_HIGHEST_THREAD_PRIO, NULL);
-	k_thread_name_set(&work_q->thread, cfg->ipm_thread_name);
+	k_thread_name_set(work_q->thread_id, cfg->ipm_thread_name);
 
 	k_work_init(&data->ipm_work, zrpc_virtio_ipm_work);
 
@@ -1103,7 +1103,7 @@ static int zrpc_virtio_init(struct device const *dev)
 	rx_work_q = &data->rx_work_q;
 	k_work_queue_start(rx_work_q, data->rx_stack, cfg->rx_stack_size,
 		K_HIGHEST_THREAD_PRIO, NULL);
-	k_thread_name_set(&rx_work_q->thread, cfg->rx_thread_name);
+	k_thread_name_set(rx_work_q->thread_id, cfg->rx_thread_name);
 	k_work_init(&data->rx_work, zrpc_virtio_rp_ept_work);
 
 	sys_slist_init(&data->pending_replies);
