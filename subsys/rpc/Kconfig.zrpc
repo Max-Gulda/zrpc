@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config ZRPC
-	bool "Enable zRPC remote procedure calls"
+	bool "zRPC remote procedure calls"
 	default n
 	help
 	  Enable the zRPC implementation core.
