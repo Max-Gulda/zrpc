@@ -740,7 +740,7 @@ static int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_rx(struct zrpc
 	{{ param.name | lower }} = zrpc_{{ channel.name | lower}}_heap_alloc({{ param.size }});
 	alloc_ok &= !!{{ param.name | lower }};
 	dynaddrs[{{ loop.index - 1 }}u] = {{ param.name | lower }};
-	rspsize += {{ param.size }};
+	rspsize += sizeof(struct zrpc_attr) + zrpc_align({{ param.size }});
 	{% endfor %}
 
 	{% if rpc.out_parameters | length %}
@@ -1010,7 +1010,7 @@ static int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_rx(struct zrpc
 	{{ param.name | lower }} = zrpc_{{ channel.name | lower}}_heap_alloc({{ param.size }});
 	alloc_ok &= !!{{ param.name | lower }};
 	dynaddrs[{{ loop.index - 1 }}u] = {{ param.name | lower }};
-	rspsize += {{ param.size }};
+	rspsize += sizeof(struct zrpc_attr) + zrpc_align({{ param.size }});
 	{% endfor %}
 
 	{% if rpc.out_parameters | length %}
