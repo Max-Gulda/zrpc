@@ -100,14 +100,14 @@ int zrpc_tlvb_put(struct zrpc_tlvb *restrict tlvb, zrpc_tag tag,
 		return -EOVERFLOW;
 #endif
 
-	if (unlikely(zrpc_tlvb_space(tlvb) < sizeof(*attr) + zrpc_align(n)))
+	if (unlikely(zrpc_tlvb_space(tlvb) < totsz))
 		return -ENOBUFS;
 
 	if (likely(n))
 		memcpy(zrpc_attr_data(attr), data, n);
 
 	attr->tag = tag;
-	attr->len = totsz;
+	attr->len = sizeof(*attr) + n;
 	tlvb->head += zrpc_align(attr->len);
 	return 0;
 }
