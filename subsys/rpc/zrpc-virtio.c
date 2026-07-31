@@ -881,14 +881,10 @@ static void zrpc_virtio_bind_cb(struct rpmsg_device *rdev, char const *name,
  */
 static void zrpc_virtio_ipm_work(struct k_work *work)
 {
-	uint_fast8_t vqueue_id;
-	struct device const *dev;
 	struct zrpc_virtio_data *data =
 		CONTAINER_OF(work, struct zrpc_virtio_data, ipm_work);
-	dev = data->dev;
 
-	vqueue_id = zrpc_virtio_vqueue_id(dev);
-	virtqueue_notification(zrpc_virtio_this_vqueue(dev));
+	virtqueue_notification(zrpc_virtio_this_vqueue(data->dev));
 }
 
 
