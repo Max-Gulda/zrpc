@@ -25,7 +25,7 @@
 
 uint16_t zrpc_seq_next(void)
 {
-	atomic_t next = ATOMIC_INIT(UINT16_MAX + 1u);
+	static atomic_t next = ATOMIC_INIT(UINT16_MAX + 1u);
 	atomic_val_t v = atomic_get(&next);
 
 	if (unlikely(v == UINT16_MAX + 1u)) {
