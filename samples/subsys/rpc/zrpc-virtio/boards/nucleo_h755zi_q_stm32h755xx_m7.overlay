@@ -21,6 +21,7 @@
 
 		zrpc,channel-id = <0>;
 		zrpc,host;
+		zrpc,cpu-has-dcache;
 
 		zrpc,virtio-ipm-handle = <&mailbox>;
 

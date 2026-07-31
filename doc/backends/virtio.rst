@@ -73,6 +73,11 @@ channel must set the ``zrpc,host`` property.
 	instances will trigger reads on both instances whenever an RPC arrives on one of
 	them.
 
+.. note::
+
+	If you CPU has dcache, you will want to set the ``zrpc,cpu-has-dcache`` property in the
+	devicetree node. Doing so automatically enables ``CONFIG_OPENAMP_WITH_DCACHE``.
+
 .. _virtio_host_remote:
 
 Host Selection

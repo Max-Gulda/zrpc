@@ -208,6 +208,9 @@ struct zrpc_virtio_config {
 	/** Whether or not the endpoint should run in host mode */
 	bool host;
 
+	/** Whether or not explicit dcache flushes are required */
+	bool have_dcache;
+
 	/** Base address of the shared memory section */
 	uint32_t shm_addr;
 
@@ -321,6 +324,11 @@ static unsigned char zrpc_virtio_get_status(struct virtio_device *vdev)
 		return VIRTIO_CONFIG_STATUS_DRIVER_OK;
 
 	ctrl_blk = zrpc_virtio_ctrl_blk(dev);
+
+	if (cfg->have_dcache)
+		sys_cache_data_invd_range(&ctrl_blk->status,
+					sizeof(ctrl_blk->status));
+
 	return sys_read8((mem_addr_t)&ctrl_blk->status);
 }
 
@@ -330,12 +338,17 @@ static unsigned char zrpc_virtio_get_status(struct virtio_device *vdev)
  *
  * @param ctrl_blk_addr Address of the control block.
  * @param status        The statust to set.
+ * @param have_dcache  Whether or not dcache must be flushed
  */
 static inline void zrpc_virtio_set_status_raw(mem_addr_t ctrl_blk_addr,
-			unsigned char status)
+			unsigned char status, bool have_dcache)
 {
 	struct zrpc_virtio_ctrl_blk *ctrl_blk = (void *)ctrl_blk_addr;
 	sys_write8(status, (mem_addr_t)&ctrl_blk->status);
+
+	if (have_dcache)
+		sys_cache_data_flush_range(&ctrl_blk->status,
+					sizeof(ctrl_blk->status));
 }
 
 
@@ -350,13 +363,16 @@ static void zrpc_virtio_set_status(struct virtio_device *vdev,
 		unsigned char status)
 {
 	struct device const *dev;
+	struct zrpc_virtio_config const *cfg;
 	struct zrpc_virtio_data *data =
 		CONTAINER_OF(vdev, struct zrpc_virtio_data, vdev);
 	struct zrpc_virtio_ctrl_blk *ctrl_blk;
 
 	dev = data->dev;
+	cfg = dev->config;
+
 	ctrl_blk = zrpc_virtio_ctrl_blk(dev);
-	zrpc_virtio_set_status_raw((unsigned long)ctrl_blk, status);
+	zrpc_virtio_set_status_raw((unsigned long)ctrl_blk, status, cfg->have_dcache);
 }
 
 
@@ -1236,9 +1252,8 @@ static int zrpc_virtio_init(struct device const *dev)
 	);								\
 									\
 	static struct zrpc_virtio_config const zrpc_virtio_cfg_ ## n = {\
-		.host = DT_INST_PROP(					\
-			n, zrpc_host					\
-		),							\
+		.host = DT_INST_PROP(n, zrpc_host),			\
+		.have_dcache = DT_INST_PROP(n, zrpc_cpu_has_dcache),	\
 		.shm_addr = DT_INST_REG_ADDR(n),			\
 		.shm_size = DT_INST_REG_SIZE(n),			\
 		.ctrl_blk_size = DT_INST_PROP(				\
@@ -1285,8 +1300,14 @@ static int zrpc_virtio_init(struct device const *dev)
 	{								\
 		struct zrpc_virtio_config const *cfg =			\
 			&zrpc_virtio_cfg_ ## n;				\
-		if (cfg->host)						\
-			zrpc_virtio_set_status_raw(cfg->shm_addr, 0);	\
+									\
+		if (DT_INST_PROP(n, zrpc_host))	{			\
+			zrpc_virtio_set_status_raw(			\
+				cfg->shm_addr,				\
+				VIRTIO_CONFIG_STATUS_RESET,		\
+				DT_INST_PROP(n, zrpc_cpu_has_dcache)	\
+			);						\
+		}							\
 		return 0;						\
 	}								\
 									\

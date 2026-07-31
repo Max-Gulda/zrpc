@@ -78,6 +78,7 @@ endif # ZRPC_GLOBAL_HEAP_SIZE
 
 DT_COMPAT_ZRPC_VIRTIO_CHANNEL = zrpc,virtio-channel
 DT_PROP_ZRPC_HOST = zrpc,host
+DT_PROP_ZRPC_CPU_HAS_DCACHE = zrpc,cpu-has-dcache
 
 config ZRPC_BACKEND_VIRTIO
 	bool "Enable hypervisorless virtio zRPC backend"
@@ -86,6 +87,7 @@ config ZRPC_BACKEND_VIRTIO
 	select IPM
 	select OPENAMP
 	select OPENAMP_MASTER if $(dt_compat_any_has_prop,$(DT_COMPAT_ZRPC_VIRTIO_CHANNEL),$(DT_PROP_ZRPC_HOST),True)
+	select OPENAMP_WITH_DCACHE if $(dt_compat_any_has_prop,$(DT_COMPAT_ZRPC_VIRTIO_CHANNEL),$(DT_PROP_ZRPC_CPU_HAS_DCACHE),True)
 	help
 	  The hypervisorless virtio zRPC backend enables zRPC over an OpenAMP shared memory
 	  channel.

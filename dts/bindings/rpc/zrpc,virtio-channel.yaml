@@ -19,6 +19,11 @@ properties:
 
       Must be the same for both channel endpoints.
 
+  zrpc,cpu-has-dcache:
+    type: boolean
+    description: |
+      Flush relevant parts of the dcache to memory after each write.
+
   zrpc,virtio-rx-stack-size:
     type: int
     default: 512
