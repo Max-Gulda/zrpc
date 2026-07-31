@@ -525,10 +525,11 @@ static int zrpc_virtio_send(struct device const *dev,
 		return -EAGAIN;
 	}
 
-#ifdef CONFIG_ZRPC_PEDANTIC
-	if (sizeof(*msghdr) + msghdr->len > (size_t)INT_MAX)
-		return -EOVERFLOW;
-#endif
+	if (IS_ENABLED(CONFIG_ZRPC_PEDANTIC)) {
+		if (sizeof(*msghdr) + msghdr->len > (size_t)INT_MAX)
+			return -EOVERFLOW;
+	}
+
 	len = sizeof(*msghdr) + msghdr->len;
 
 	if (unlikely(data->max_rpc_size && len > data->max_rpc_size))

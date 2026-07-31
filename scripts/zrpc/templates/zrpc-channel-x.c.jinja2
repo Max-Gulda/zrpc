@@ -297,10 +297,10 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | m
 	if (unlikely(!device_is_ready({{ channel.name | lower }}_dev)))
 		return -ENODEV;
 
-#ifdef CONFIG_ZRPC_PEDANTIC
-	if (unlikely(required > ZRPC_MSGLEN_MAX))
-		return -EOVERFLOW;
-#endif
+	if (IS_ENABLED(CONFIG_ZRPC_PEDANTIC)) {
+		if (unlikely(required > ZRPC_MSGLEN_MAX))
+			return -EOVERFLOW;
+	}
 	msghdr = zrpc_{{ channel.name | lower }}_heap_alloc(required);
 	if (!msghdr)
 		return -ENOMEM;
@@ -320,19 +320,20 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | m
 		ret = zrpc_{{ channel.name | lower}}_{{ rpc.name | lower }}_decode_reply(msghdr, attrs,
 				ARRAY_SIZE(attrs));
 
-#ifdef CONFIG_ZRPC_PEDANTIC
-	attr = attrs[ZRPC_{{ channel.name | upper }}_{{ rpc.name | upper }}_FIX_PARAM_RET];
-	if (unlikely(!ret && !attr))
-		ret = -ENODATA;
+	if (IS_ENABLED(CONFIG_ZRPC_PEDANTIC)) {
+		attr = attrs[ZRPC_{{ channel.name | upper }}_{{ rpc.name | upper }}_FIX_PARAM_RET];
+		if (unlikely(!ret && !attr))
+			ret = -ENODATA;
 		{% for param in rpc.out_parameters %}
 
-	attr = attrs[ZRPC_{{ channel.name | upper }}_{{ rpc.name | upper }}_PARAM_{{ param.name | upper }}];
-	if (unlikely(!ret && !attr))
-		ret = -ENODATA;
-	if (unlikely(!ret && zrpc_attr_len(attr) > {{ param.size }}))
-		ret = -ENOBUFS;
+		attr = attrs[ZRPC_{{ channel.name | upper }}_{{ rpc.name | upper }}_PARAM_{{ param.name | upper }}];
+		if (unlikely(!ret && !attr))
+			ret = -ENODATA;
+		if (unlikely(!ret && zrpc_attr_len(attr) > {{ param.size }}))
+			ret = -ENOBUFS;
 		{% endfor %}
-#endif
+	}
+
 	if (!ret) {
 		{% for param in rpc.out_parameters %}
 		attr = attrs[ZRPC_{{ channel.name | upper }}_{{ rpc.name | upper }}_PARAM_{{ param.name | upper }}];
@@ -485,10 +486,11 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | m
 	if (unlikely(!device_is_ready({{ channel.name | lower }}_dev)))
 		return -ENODEV;
 
-#ifdef CONFIG_ZRPC_PEDANTIC
-	if (unlikely(required > ZRPC_MSGLEN_MAX))
-		return -EOVERFLOW;
-#endif
+	if (IS_ENABLED(CONFIG_ZRPC_PEDANTIC)) {
+		if (unlikely(required > ZRPC_MSGLEN_MAX))
+			return -EOVERFLOW;
+	}
+
 	msghdr = zrpc_{{ channel.name | lower }}_heap_alloc(required);
 	if (!msghdr)
 		return -ENOMEM;
@@ -508,19 +510,19 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | m
 		ret = zrpc_{{ channel.name | lower}}_{{ rpc.name | lower }}_decode_reply(msghdr, attrs,
 				ARRAY_SIZE(attrs));
 
-#ifdef CONFIG_ZRPC_PEDANTIC
-	attr = attrs[ZRPC_{{ channel.name | upper }}_{{ rpc.name | upper }}_FIX_PARAM_RET];
-	if (unlikely(!ret && !attr))
-		ret = -ENODATA;
+	if (IS_ENABLED(CONFIG_ZRPC_PEDANTIC)) {
+		attr = attrs[ZRPC_{{ channel.name | upper }}_{{ rpc.name | upper }}_FIX_PARAM_RET];
+		if (unlikely(!ret && !attr))
+			ret = -ENODATA;
 		{% for param in rpc.out_parameters %}
 
-	attr = attrs[ZRPC_{{ channel.name | upper }}_{{ rpc.name | upper }}_PARAM_{{ param.name | upper }}];
-	if (unlikely(!ret && !attr))
-		ret = -ENODATA;
-	if (unlikely(!ret && zrpc_attr_len(attr) > {{ param.size }}))
-		ret = -ENOBUFS;
+		attr = attrs[ZRPC_{{ channel.name | upper }}_{{ rpc.name | upper }}_PARAM_{{ param.name | upper }}];
+		if (unlikely(!ret && !attr))
+			ret = -ENODATA;
+		if (unlikely(!ret && zrpc_attr_len(attr) > {{ param.size }}))
+			ret = -ENOBUFS;
 		{% endfor %}
-#endif
+	}
 	if (!ret) {
 		{% for param in rpc.out_parameters %}
 		attr = attrs[ZRPC_{{ channel.name | upper }}_{{ rpc.name | upper }}_PARAM_{{ param.name | upper }}];
