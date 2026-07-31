@@ -67,6 +67,16 @@ properties:
 
       Queued up data is processed almost immediately. This value should rarely be large.
 
+  zrpc,virtio-copy-rx:
+    type: boolean
+    description: |
+      Copy incoming RPCs to an instance-local memory slab before queueing
+      them for dispatch. This releases the shared RPMsg buffer immediately
+      and prevents a delayed RX worker from backpressuring the peer.
+
+      Enabling this reserves one transmit-chunk-sized block per RX queue
+      entry and concurrent reply.
+
   zrpc,virtio-reply-queue-size:
     type: int
     default: 4

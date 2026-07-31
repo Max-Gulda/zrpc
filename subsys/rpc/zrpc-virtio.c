@@ -14,6 +14,7 @@
 #include <stdalign.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -176,6 +177,9 @@ struct zrpc_virtio_data {
 
 	/** <tt>struct zrpc_virtio_wait_node</tt> pool */
 	struct k_mem_slab *wait_slab;
+
+	/** Optional pool for private copies of incoming messages */
+	struct k_mem_slab *rx_copy_slab;
 
 	/** Address of stack used by IPM thread */
 	k_thread_stack_t *ipm_stack;
@@ -520,6 +524,25 @@ static int zrpc_virtio_send(struct device const *dev,
 
 
 /**
+ * @brief Release a queued receive message.
+ *
+ * Messages either remain in their held RPMsg buffer or are copied to an
+ * instance-local slab in the endpoint callback.
+ *
+ * @param data   Instance owning @p msghdr.
+ * @param msghdr Message to release.
+ */
+static void zrpc_virtio_release_rx_message(struct zrpc_virtio_data *data,
+		struct zrpc_msghdr *msghdr)
+{
+	if (data->rx_copy_slab)
+		k_mem_slab_free(data->rx_copy_slab, msghdr);
+	else
+		rpmsg_release_rx_buffer(&data->ept, msghdr);
+}
+
+
+/**
  * @brief Receive reply with sequence number @p seq.
  *
  * @param dev      The device instance.
@@ -564,6 +587,8 @@ static int zrpc_virtio_recv(struct device const *dev, uint16_t seq,
 		if (!ret)
 			memcpy(msghdr, node->msghdr,
 				sizeof(*msghdr) + node->msghdr->len);
+		if (node->msghdr)
+			zrpc_virtio_release_rx_message(data, node->msghdr);
 		k_mem_slab_free(data->wait_slab, node);
 	}
 	k_mutex_unlock(&data->pending_mutex);
@@ -609,9 +634,11 @@ static int zrpc_virtio_rp_ept_cb(struct rpmsg_endpoint *ept, void *rpdata,
 		size_t len, uint32_t src, void *priv)
 {
 	int ret;
+	void *copy;
 	struct zrpc_msghdr *msghdr = rpdata;
 	struct zrpc_virtio_data *data =
 		CONTAINER_OF(ept, struct zrpc_virtio_data, ept);
+	struct zrpc_virtio_config const *cfg = data->dev->config;
 
 	VDEV_DBG(&data->vdev, "Received blob of size %zu", len);
 	if (unlikely(len < sizeof(*msghdr))) {
@@ -633,13 +660,37 @@ static int zrpc_virtio_rp_ept_cb(struct rpmsg_endpoint *ept, void *rpdata,
 	VDEV_DBG(&data->vdev,
 		"Queueing up message with id 0x%04" PRIx16 ", seq 0x%04" PRIx16,
 		msghdr->id, msghdr->seq);
+	if (data->rx_copy_slab) {
+		if (unlikely(len > cfg->tx_chunk_size)) {
+			VDEV_WRN(&data->vdev,
+				"Discarding message of size %zu; local RX blocks are %u bytes",
+				len, cfg->tx_chunk_size);
+			return RPMSG_SUCCESS;
+		}
+
+		ret = k_mem_slab_alloc(data->rx_copy_slab, &copy, K_NO_WAIT);
+		if (ret) {
+			VDEV_WRN(&data->vdev,
+				"Local RX copy pool exhausted; discarding message");
+			return RPMSG_SUCCESS;
+		}
+		memcpy(copy, msghdr, len);
+		msghdr = copy;
+	} else {
+		rpmsg_hold_rx_buffer(ept, msghdr);
+	}
+
 	ret = k_mutex_lock(&data->rx_mutex, K_NO_WAIT);
 	if (!ret) {
 		ret = k_msgq_put(data->rx_queue, &msghdr, K_NO_WAIT);
 		k_mutex_unlock(&data->rx_mutex);
 	}
-	if (!ret)
+	if (ret)
+		zrpc_virtio_release_rx_message(data, msghdr);
+	if (!ret) {
+		/* Coalesced submissions here may leave audio queued and cause stalls. */
 		ret = k_work_submit_to_queue(&data->rx_work_q, &data->rx_work);
+	}
 	if (ret < 0)
 		VDEV_ERR(&data->vdev,
 			"Could not queue up processing of incoming RPC: %d",
@@ -701,7 +752,10 @@ static int zrpc_virtio_process_reply(struct device const *dev,
 				node->seq);
 
 			sys_slist_remove(pending, prev, &node->head);
-			k_mem_slab_free(data->wait_slab, data->wait_slab);
+			if (node->msghdr)
+				zrpc_virtio_release_rx_message(
+					data, node->msghdr);
+			k_mem_slab_free(data->wait_slab, node);
 		}
 		else
 			prev = &node->head;
@@ -733,6 +787,7 @@ static int zrpc_virtio_process_reply(struct device const *dev,
 static void zrpc_virtio_rp_ept_work(struct k_work *work)
 {
 	int ret;
+	bool is_reply;
 	struct device const *dev;
 	struct zrpc_msghdr *msghdr;
 	struct zrpc_virtio_data *data =
@@ -760,10 +815,15 @@ static void zrpc_virtio_rp_ept_work(struct k_work *work)
 			return;
 		}
 
-		if (msghdr->flags & ZRPC_FLAG_REPLY)
+		is_reply = msghdr->flags & ZRPC_FLAG_REPLY;
+		if (is_reply)
 			ret = zrpc_virtio_process_reply(dev, msghdr);
-		else
+		else {
 			ret = zrpc_rx_dispatch(cfg->channel_id, msghdr);
+			zrpc_virtio_release_rx_message(data, msghdr);
+		}
+		if (ret && is_reply)
+			zrpc_virtio_release_rx_message(data, msghdr);
 		if (ret)
 			VDEV_ERR(&data->vdev, "Error processing %s: %d",
 				msghdr->flags & ZRPC_FLAG_REPLY ?
@@ -1158,6 +1218,21 @@ static int zrpc_virtio_init(struct device const *dev)
 		alignof(struct zrpc_virtio_wait_node)			\
 	);								\
 									\
+	COND_CODE_1(							\
+		DT_INST_PROP(n, zrpc_virtio_copy_rx),			\
+		(K_MEM_SLAB_DEFINE(					\
+			zrpc_virtio_rx_copy_slab_ ## n,			\
+			DT_INST_PROP(n, zrpc_virtio_tx_chunk_size),	\
+			DT_INST_PROP(n, zrpc_virtio_rx_queue_size) +	\
+				DT_INST_PROP(				\
+					n,				\
+					zrpc_virtio_max_concurrent_replies\
+				),					\
+			alignof(struct zrpc_msghdr)			\
+		);),							\
+		()							\
+	)								\
+									\
 									\
 	static struct zrpc_virtio_data zrpc_virtio_data_ ## n = {	\
 		.ipm_stack = zrpc_virtio_ipm_stack_ ## n,		\
@@ -1165,6 +1240,11 @@ static int zrpc_virtio_init(struct device const *dev)
 		.rx_queue = &zrpc_virtio_rx_queue_ ## n,		\
 		.reply_queue = &zrpc_virtio_reply_queue_ ## n,		\
 		.wait_slab = &zrpc_virtio_wait_slab_ ## n,		\
+		.rx_copy_slab = COND_CODE_1(				\
+			DT_INST_PROP(n, zrpc_virtio_copy_rx),		\
+			(&zrpc_virtio_rx_copy_slab_ ## n),		\
+			(NULL)						\
+		),							\
 	};								\
 									\
 	static_assert(							\
