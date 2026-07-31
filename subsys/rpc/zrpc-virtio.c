@@ -1098,6 +1098,7 @@ static int zrpc_virtio_init_ipm(struct device const *dev)
 static int zrpc_virtio_init_shm(struct device const *dev)
 {
 	int ret;
+	size_t shmpool_size;
 	struct rpmsg_device *rdev;
 	struct zrpc_virtio_data *data = dev->data;
 	struct rpmsg_virtio_shm_pool *shmpool = NULL;
@@ -1107,17 +1108,22 @@ static int zrpc_virtio_init_shm(struct device const *dev)
 		.r2h_buf_size = cfg->tx_chunk_size,
 		.split_shpool = false,
 	};
-	void (*bind_cb)(struct rpmsg_device *, char const *, uint32_t) = NULL;
 
 	if (cfg->host) {
+		/*
+		 * The I/O mapping covers the payload buffers and both vrings.
+		 * Keep the trailing, ctrl_blk_size-sized vring areas out of the
+		 * allocator or payload buffers will overwrite ring metadata.
+		 */
+		shmpool_size = zrpc_virtio_io_size(dev) -
+			ARRAY_SIZE(data->vrings) * cfg->ctrl_blk_size;
 		rpmsg_virtio_init_shm_pool(&data->shmpool,
 			(void *)zrpc_virtio_io_addr(dev),
-			zrpc_virtio_io_size(dev));
+			shmpool_size);
 		shmpool = &data->shmpool;
-		bind_cb = zrpc_virtio_bind_cb;
 	}
 
-	ret = rpmsg_init_vdev_with_config(&data->rvdev, &data->vdev, bind_cb,
+	ret = rpmsg_init_vdev_with_config(&data->rvdev, &data->vdev, NULL,
 			&data->shm_io, shmpool, &rpmsg_cfg);
 	if (ret)
 		return -ENODEV;
@@ -1256,6 +1262,13 @@ static int zrpc_virtio_init(struct device const *dev)
 		DT_INST_PROP(n, zrpc_virtio_ctrl_block_size) >		\
 			sizeof(struct zrpc_virtio_ctrl_blk),		\
 		"Configured control block size is too small"		\
+	);								\
+	static_assert(							\
+		DT_INST_REG_SIZE(n) >					\
+			3u * DT_INST_PROP(				\
+				n, zrpc_virtio_ctrl_block_size		\
+			),						\
+		"Shared memory must fit control block and two vrings"	\
 	);								\
 									\
 	static struct zrpc_virtio_config const zrpc_virtio_cfg_ ## n = {\
