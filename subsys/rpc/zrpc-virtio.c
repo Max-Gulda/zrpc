@@ -582,6 +582,7 @@ static int zrpc_virtio_recv(struct device const *dev, uint16_t seq,
 {
 	int ret;
 	void *mem;
+	struct zrpc_msghdr *mhdr;
 	struct zrpc_virtio_wait_node *node;
 	struct zrpc_virtio_data *data = dev->data;
 
@@ -605,8 +606,8 @@ static int zrpc_virtio_recv(struct device const *dev, uint16_t seq,
 	}
 
 	if (node) {
-		if (unlikely(!ret && (msg_size < sizeof(*msghdr) ||
-			node->msghdr->len > msg_size - sizeof(*msghdr))))
+		mhdr = node->msghdr;
+		if (unlikely(!ret && msg_size < mhdr->len + sizeof(*mhdr)))
 			ret = -ENOBUFS;
 		if (!ret)
 			memcpy(msghdr, node->msghdr,
