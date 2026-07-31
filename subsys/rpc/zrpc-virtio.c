@@ -89,6 +89,13 @@ LOG_MODULE_REGISTER(zrpc_virtio, CONFIG_ZRPC_VIRTIO_LOG_LEVEL);
 #define VDEV_HEXDUMP_WRN(...) VDEV_HEXDUMP(WRN, __VA_ARGS__)
 #define VDEV_HEXDUMP_ERR(...) VDEV_HEXDUMP(ERR, __VA_ARGS__)
 
+/*
+ * Each zRPC virtio device owns exactly one RPMsg endpoint. Give both peers
+ * the same fixed address so either side can send first without relying on a
+ * one-shot name-service announcement and mailbox wakeup.
+ */
+#define ZRPC_VIRTIO_ENDPOINT_ADDR RPMSG_RESERVED_ADDRESSES
+
 /** @endcond */
 
 /** Control block */
@@ -1118,15 +1125,13 @@ static int zrpc_virtio_init_shm(struct device const *dev)
 	rdev = rpmsg_virtio_get_rpmsg_device(&data->rvdev);
 	if (unlikely(!rdev))
 		return -ENODEV;
-	if (!cfg->host) {
-		ret = rpmsg_create_ept(&data->ept, rdev, dev->name,
-			RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, zrpc_virtio_rp_ept_cb,
-			zrpc_virtio_rp_unbind_cb);
-		if (!ret)
-			data->ept_bound = true;
-		else
-			ret = -EFAULT;
-	}
+	ret = rpmsg_create_ept(&data->ept, rdev, "",
+		ZRPC_VIRTIO_ENDPOINT_ADDR, ZRPC_VIRTIO_ENDPOINT_ADDR,
+		zrpc_virtio_rp_ept_cb, zrpc_virtio_rp_unbind_cb);
+	if (!ret)
+		data->ept_bound = true;
+	else
+		ret = -EFAULT;
 	if (!ret) {
 		ret = rpmsg_virtio_get_tx_buffer_size(rdev);
 		if (ret > 0)
