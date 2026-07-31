@@ -1112,7 +1112,7 @@ static int zrpc_virtio_init_shm(struct device const *dev)
 	rdev = rpmsg_virtio_get_rpmsg_device(&data->rvdev);
 	if (unlikely(!rdev))
 		return -ENODEV;
-	ret = rpmsg_create_ept(&data->ept, rdev, "",
+	ret = rpmsg_create_ept(&data->ept, rdev, dev->name,
 		ZRPC_VIRTIO_ENDPOINT_ADDR, ZRPC_VIRTIO_ENDPOINT_ADDR,
 		zrpc_virtio_rp_ept_cb, zrpc_virtio_rp_unbind_cb);
 	if (!ret)
