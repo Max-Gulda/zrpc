@@ -798,10 +798,10 @@ static void zrpc_virtio_rp_ept_work(struct k_work *work)
 	cfg = dev->config;
 
 	do {
-		ret = k_mutex_lock(&data->rx_mutex,  K_MSEC(50));
+		ret = k_mutex_lock(&data->rx_mutex, K_MSEC(50));
 		if (ret) {
 			VDEV_ERR(&data->vdev, "Error locking RX mutex: %d",
-									-ret);
+				-ret);
 			return;
 		}
 		ret = k_msgq_get(data->rx_queue, &msghdr, K_NO_WAIT);
