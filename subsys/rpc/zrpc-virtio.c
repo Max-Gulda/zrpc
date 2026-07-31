@@ -834,41 +834,8 @@ static void zrpc_virtio_rp_ept_work(struct k_work *work)
 			zrpc_virtio_release_rx_message(data, msghdr);
 		if (ret)
 			VDEV_ERR(&data->vdev, "Error processing %s: %d",
-				msghdr->flags & ZRPC_FLAG_REPLY ?
-					"reply" : "incoming RPC",
-				-ret);
-	} while (1);
-}
-
-/**
- * @brief Callback invoked by rpmsg core when the remote has bound its endpoint.
- *
- * @param rdev The rpmsg device.
- * @param name Name of the endpoint.
- * @param dst  Destination identifier.
- */
-static void zrpc_virtio_bind_cb(struct rpmsg_device *rdev, char const *name,
-		uint32_t dst)
-{
-	int ret;
-	struct device const *dev;
-	struct zrpc_virtio_data *data;
-	struct rpmsg_virtio_device *rvdev =
-		CONTAINER_OF(rdev, struct rpmsg_virtio_device, rdev);
-	data = CONTAINER_OF(rvdev, struct zrpc_virtio_data, rvdev);
-	dev = data->dev;
-
-	if (name[0] != dev->name[0] || strcmp(&name[1], &dev->name[1]))
-		return;
-
-	ret = rpmsg_create_ept(&data->ept, rdev, name, RPMSG_ADDR_ANY, dst,
-		zrpc_virtio_rp_ept_cb, zrpc_virtio_rp_unbind_cb);
-
-	if (!ret)
-		data->ept_bound = true;
-	else
-		VDEV_ERR(&data->vdev, "Error creating endpoint %s: %d", name,
-								ret);
+				is_reply ? "reply" : "incoming RPC", -ret);
+	} while (true);
 }
 
 
