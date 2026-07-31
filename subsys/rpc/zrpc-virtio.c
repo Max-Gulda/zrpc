@@ -700,7 +700,8 @@ static int zrpc_virtio_rp_ept_cb(struct rpmsg_endpoint *ept, void *rpdata,
 		}
 		memcpy(copy, msghdr, len);
 		msghdr = copy;
-	} else {
+	}
+	else {
 		rpmsg_hold_rx_buffer(ept, msghdr);
 	}
 
@@ -709,12 +710,12 @@ static int zrpc_virtio_rp_ept_cb(struct rpmsg_endpoint *ept, void *rpdata,
 		ret = k_msgq_put(data->rx_queue, &msghdr, K_NO_WAIT);
 		k_mutex_unlock(&data->rx_mutex);
 	}
-	if (ret)
-		zrpc_virtio_release_rx_message(data, msghdr);
 	if (!ret) {
 		/* Coalesced submissions here may leave audio queued and cause stalls. */
 		ret = k_work_submit_to_queue(&data->rx_work_q, &data->rx_work);
 	}
+	else
+		zrpc_virtio_release_rx_message(data, msghdr);
 	if (ret < 0)
 		VDEV_ERR(&data->vdev,
 			"Could not queue up processing of incoming RPC: %d",
