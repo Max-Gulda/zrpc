@@ -166,6 +166,9 @@ enum {
 
 #if ZRPC_CHANNEL_{{ channel.name | upper }}_IN_HOST_MODE
 {% for rpc in channel.rpcs_from_host %}
+	{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+	{% endif %}
 
 
 /**
@@ -350,12 +353,17 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | m
 	{% endif %}
 	return ret;
 }
+	{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+	{% endif %}
 {% endfor %}
 
 
 #else /* ZRPC_CHANNEL_{{ channel.name | upper }}_IN_HOST_MODE */
 {% for rpc in channel.rpcs_from_remote %}
-
+	{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+	{% endif %}
 
 /**
  * @brief Encode {{ rpc.name }} RPC.
@@ -539,6 +547,9 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | m
 	{% endif %}
 	return ret;
 }
+	{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+	{% endif %}
 {% endfor %}
 
 
@@ -595,12 +606,20 @@ static inline void zrpc_{{ channel.name | lower }}_user_data_unlock(zrpc_tag tag
 
 {% endif %}
 {% for rpc in channel.rpcs_to_host | selectattr("want_user_data") %}
+	{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+	{% endif %}
 
 /** User data for RPC {{ rpc.name }} */
 static void *zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_user_data = NULL;
+	{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+	{% endif %}
 {% endfor %}
 {% for rpc in channel.rpcs_to_host %}
-
+	{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+	{% endif %}
 
 /**
  * @brief Decode {{ rpc.name }} RPC.
@@ -795,9 +814,15 @@ static int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_rx(struct zrpc
 
 	return ret;
 }
+	{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+	{% endif %}
 {% endfor %}
 {% for rpc in channel.rpcs_to_host | selectattr("want_user_data") %}
 
+	{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+	{% endif %}
 
 int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_set_user_data(void *user_data)
 {
@@ -813,6 +838,9 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_set_user_data(void *u
 	}
 	return ret;
 }
+	{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+	{% endif %}
 {% endfor %}
 
 
@@ -866,11 +894,20 @@ static inline void zrpc_{{ channel.name | lower }}_user_data_unlock(zrpc_tag tag
 
 {% endif %}
 {% for rpc in channel.rpcs_to_remote | selectattr("want_user_data") %}
+	{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+	{% endif %}
 
 /** User data for RPC {{ rpc.name }} */
 static void *zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_user_data = NULL;
+	{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }}  */
+	{% endif %}
 {% endfor %}
 {% for rpc in channel.rpcs_to_remote %}
+	{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+	{% endif %}
 
 /**
  * @brief Decode {{ rpc.name }} RPC.
@@ -1065,9 +1102,15 @@ static int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_rx(struct zrpc
 
 	return ret;
 }
+	{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+	{% endif %}
 {% endfor %}
 {% for rpc in channel.rpcs_to_remote | selectattr("want_user_data") %}
 
+	{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+	{% endif %}
 
 int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_set_user_data(void *user_data)
 {
@@ -1084,6 +1127,9 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_set_user_data(void *u
 	}
 	return ret;
 }
+	{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+	{% endif %}
 {% endfor %}
 
 
@@ -1097,16 +1143,28 @@ int zrpc_{{ channel.name | lower }}_rx(struct zrpc_msghdr *msghdr)
 #if ZRPC_CHANNEL_{{ channel.name | upper }}_IN_HOST_MODE
 	{% for rpc in channel.rpcs_to_host %}
 	/* RPC {{ rpc.name }} */
+		{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+		{% endif %}
 	case ZRPC_{{ channel.name | upper }}_RPC_ID_{{ rpc.name | upper }}:
 		ret = zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_rx(msghdr);
 		break;
+		{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+		{% endif %}
 	{% endfor %}
 #else /* ZRPC_CHANNEL_{{ channel.name | upper }}_IN_HOST_MODE */
 	{% for rpc in channel.rpcs_to_remote %}
 	/* RPC {{ rpc.name }} */
+		{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+		{% endif %}
 	case ZRPC_{{ channel.name | upper }}_RPC_ID_{{ rpc.name | upper }}:
 		ret = zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_rx(msghdr);
 		break;
+		{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+		{% endif %}
 	{% endfor %}
 #endif /* ZRPC_CHANNEL_{{ channel.name | upper }}_IN_HOST_MODE */
 	default:

@@ -7,20 +7,24 @@
 from __future__ import annotations
 
 import collections
+import contextlib
 import dataclasses
 import enum
 import inspect
 import json
+import os
 import pathlib
 import re
+import tempfile
 import warnings
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple, Union
 
 import crc8
-import yaml
+import kconfiglib
 import pykwalify
 import pykwalify.core
+import yaml
 
 from pycparser import c_ast, c_parser
 
@@ -364,6 +368,7 @@ class Rpc:
     crc: str
     want_reply: bool
     want_user_data: bool
+    depends_on: str
 
     def __post_init__(self) -> None:
         self.description = self.description.replace("\n", "\n * ")
@@ -373,6 +378,55 @@ class Rpc:
 
         if match.group(1) is None:
             self.crc = f"0x{self.crc}"
+
+    @property
+    def depends_on_ifdef_expr(self) -> str:
+        """Get #if expression suitable for disabling conditional RPCs
+
+        :return: A chain of preprocesser conditionals to be passed to #if
+        :rtype: str
+        """
+        if not self.depends_on:
+            return "1"
+
+        fd, path = tempfile.mkstemp()
+        try:
+            os.close(fd)
+
+            with open(path, "w", encoding="ascii") as handle:
+                handle.write(
+                    'config A\n\tbool "Dummy"\n\tdepends on ' + self.depends_on + "\n"
+                )
+
+            cfg = kconfiglib.Kconfig(path)
+        finally:
+            with contextlib.suppress(FileNotFoundError):
+                os.unlink(path)
+
+        deps = cfg.syms["A"].direct_dep
+        return self._resolve_dep_expr(deps)
+
+    @classmethod
+    def _resolve_dep_expr(
+        cls, deps: Union[kconfiglib.Symbol, Tuple[int, kconfiglib.Symbol, Any]]
+    ) -> str:
+        """Recursively resolve parsed depends_on expression.
+
+        :param deps: Recursively defined, one-or-two clause conditional in prefix notation
+        :type deps: :class:`typing.Union[kconfiglib.Symbol, typing.Tuple[int, kconfiglib.Symbol, typing.Any]]`
+
+        :return: The dependency expression as an #if conditional expression
+        :rtype: str
+        """
+
+        if isinstance(deps, kconfiglib.Symbol):
+            return f"defined(CONFIG_{deps.name})"
+
+        assert len(deps) == 3, f"{deps} is not a prefix expression"
+
+        ops = {kconfiglib.AND: "&&", kconfiglib.OR: "||"}
+
+        return f"({cls._resolve_dep_expr(deps[1])} {ops[deps[0]]} {cls._resolve_dep_expr(deps[2])})"
 
     @property
     def non_void_parameters(self) -> List[Parameter]:
@@ -482,6 +536,7 @@ class Rpc:
             crc=crc.hexdigest(),
             want_reply=yml.get("want_reply", True),
             want_user_data=yml.get("want_user_data", False),
+            depends_on=yml.get("depends_on", ""),
         )
 
 

@@ -66,6 +66,29 @@ sequence may contain any combination of the strings ``host`` and ``remote``. Whe
 set, the RPC may be sent from the :ref:`host <concept_host>` whereas when the latter is included,
 the RPC may be sent from the :ref:`remote <concept_remote>`.
 
+Depends On
+----------
+
+:key: ``depends_on``
+:type: Kconfig-style conditional expression
+:required: No
+
+Used to make individual RPCs depend on Kconfig options. The expression should be identical to
+that which might be used in a ``depends on`` clause of a Kconfig file and thus omit the ``CONFIG_``
+one would use in C and C++ source code. As an example, the following snipped would cause the RPC
+``do_something`` in the following snippet
+
+.. code-block:: yaml
+	:caption: A valid depends_on expression
+	:emphasize-lines: 4
+
+	- name: do_something
+	  parameters:
+	  origin: [ remote ]
+	  depends_on: (NETWORKING && AUDIO_CODEC) || SPI
+
+to be guarded by the equivalent of
+``#if (defined(CONFIG_NETWORKING) && defined(CONFIG_AUDIO_CODEC)) || defined(CONFIG_SPI)``
 
 .. _rpc_want_reply:
 

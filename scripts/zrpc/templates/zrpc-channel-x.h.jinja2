@@ -128,6 +128,9 @@ static_assert(
 #if ZRPC_CHANNEL_{{ channel.name | upper }}_IN_HOST_MODE
 {% for rpc in channel.rpcs_from_host %}
 
+	{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+	{% endif %}
 
 /**
 {% if rpc.brief %}
@@ -164,12 +167,18 @@ static_assert(
  */
 int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | map(attribute="c_decl") | join(", ") }});
 
+	{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+	{% endif %}
 {% endfor %}
 
 
 #else /* ZRPC_CHANNEL_{{ channel.name | upper }}_IN_HOST_MODE */
 {% for rpc in channel.rpcs_from_remote %}
 
+	{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+	{% endif %}
 
 /**
 {% if rpc.brief %}
@@ -205,6 +214,10 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | m
  * @retval -errno     Some other error occurred.
  */
 int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | map(attribute="c_decl") | join(", ") }});
+
+	{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+	{% endif %}
 
 {% endfor %}
 
@@ -228,6 +241,10 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | m
 
 #if ZRPC_CHANNEL_{{ channel.name | upper }}_IN_HOST_MODE
 {% for rpc in channel.rpcs_to_host %}
+
+	{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+	{% endif %}
 
 
 /**
@@ -273,12 +290,18 @@ extern int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_serve({{ rpc.p
  * @retval -errno Data could not be set.
  */
 int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_set_user_data(void *user_data);
+	{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+	{% endif %}
 {% endfor %}
 
 
 #else /* ZRPC_CHANNEL_{{ channel.name | upper }}_IN_HOST_MODE */
 {% for rpc in channel.rpcs_to_remote %}
 
+	{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+	{% endif %}
 
 /**
  * @brief Handle incoming RPC {{ rpc.name }}.
@@ -309,8 +332,17 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_set_user_data(void *u
  * @retval -errno An error occurred.
  */
 extern int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_serve({{ rpc.parameters | map(attribute="c_decl") | join(", ") }}{% if rpc.want_user_data %}, void *user_data{% endif %});
+
+	{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+	{% endif %}
 {% endfor %}
+
 {% for rpc in channel.rpcs_to_remote | selectattr("want_user_data") %}
+
+	{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+	{% endif %}
 
 
 /**
@@ -323,6 +355,10 @@ extern int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_serve({{ rpc.p
  * @retval -errno Data could not be set.
  */
 int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_set_user_data(void *user_data);
+
+	{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+	{% endif %}
 {% endfor %}
 
 #endif /* ZRPC_CHANNEL_{{ channel.name | upper }}_IN_HOST_MODE */
