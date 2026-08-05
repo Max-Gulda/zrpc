@@ -85,10 +85,10 @@ one would use in C and C++ source code. As an example, the following snipped wou
 	- name: do_something
 	  parameters:
 	  origin: [ remote ]
-	  depends_on: (NETWORKING && AUDIO_CODEC) || SPI
+	  depends_on: (NETWORKING && !AUDIO_CODEC) || SPI
 
 to be guarded by the equivalent of
-``#if (defined(CONFIG_NETWORKING) && defined(CONFIG_AUDIO_CODEC)) || defined(CONFIG_SPI)``
+``#if (defined(CONFIG_NETWORKING) && !defined(CONFIG_AUDIO_CODEC)) || defined(CONFIG_SPI)``
 
 .. _rpc_want_reply:
 

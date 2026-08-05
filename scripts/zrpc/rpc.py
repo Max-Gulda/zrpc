@@ -408,12 +408,17 @@ class Rpc:
 
     @classmethod
     def _resolve_dep_expr(
-        cls, deps: Union[kconfiglib.Symbol, Tuple[int, kconfiglib.Symbol, Any]]
+        cls,
+        deps: Union[
+            kconfiglib.Symbol,
+            Tuple[int, kconfiglib.Symbol],
+            Tuple[int, kconfiglib.Symbol, Any],
+        ],
     ) -> str:
         """Recursively resolve parsed depends_on expression.
 
         :param deps: Recursively defined, one-or-two clause conditional in prefix notation
-        :type deps: :class:`typing.Union[kconfiglib.Symbol, typing.Tuple[int, kconfiglib.Symbol, typing.Any]]`
+        :type deps: :class:`typing.Union[kconfiglib.Symbol, typing.Tuple[int, kconfiglib.Symbol], typing.Tuple[int, kconfiglib.Symbol, typing.Any]]`
 
         :return: The dependency expression as an #if conditional expression
         :rtype: str
@@ -422,11 +427,14 @@ class Rpc:
         if isinstance(deps, kconfiglib.Symbol):
             return f"defined(CONFIG_{deps.name})"
 
-        assert len(deps) == 3, f"{deps} is not a prefix expression"
+        if len(deps) == 2:
+            assert deps[0] == kconfiglib.NOT
+            return f"!{cls._resolve_dep_expr(deps[1])}"
 
         ops = {kconfiglib.AND: "&&", kconfiglib.OR: "||"}
 
-        return f"({cls._resolve_dep_expr(deps[1])} {ops[deps[0]]} {cls._resolve_dep_expr(deps[2])})"
+        assert len(deps) == 3, f"{deps} is not a binary prefix expression"
+        return f"({cls._resolve_dep_expr(deps[1])} {ops[deps[0]]} {cls._resolve_dep_expr(deps[2])})"  # type: ignore[misc]
 
     @property
     def non_void_parameters(self) -> List[Parameter]:
