@@ -168,6 +168,14 @@ static_assert(
 int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | map(attribute="c_decl") | join(", ") }});
 
 	{% if rpc.depends_on | length %}
+#else
+static inline int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | map(attribute="c_decl") | join(", ") }})
+{
+		{% for param in rpc.parameters %}
+		(void){{ param.name }};
+		{% endfor %}
+		return -ENOTSUP;
+}
 #endif /* {{ rpc.depends_on_ifdef_expr }} */
 	{% endif %}
 {% endfor %}
@@ -216,6 +224,14 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | m
 int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | map(attribute="c_decl") | join(", ") }});
 
 	{% if rpc.depends_on | length %}
+#else
+static inline int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | map(attribute="c_decl") | join(", ") }})
+{
+		{% for param in rpc.parameters %}
+		(void){{ param.name }};
+		{% endfor %}
+		return -ENOTSUP;
+}
 #endif /* {{ rpc.depends_on_ifdef_expr }} */
 	{% endif %}
 
@@ -276,8 +292,14 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | m
  * @retval -errno An error occurred.
  */
 extern int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_serve({{ rpc.parameters | map(attribute="c_decl") | join(", ") }}{% if rpc.want_user_data %}, void *user_data{% endif %});
+	{% if rpc.depends_on | length %}
+#endif /* {{ rpc.depends_on_ifdef_expr }} */
+	{% endif %}
 {% endfor %}
 {% for rpc in channel.rpcs_to_host | selectattr("want_user_data") %}
+	{% if rpc.depends_on | length %}
+#if {{ rpc.depends_on_ifdef_expr }}
+	{% endif %}
 
 
 /**
@@ -291,6 +313,12 @@ extern int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_serve({{ rpc.p
  */
 int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_set_user_data(void *user_data);
 	{% if rpc.depends_on | length %}
+#else
+static inline int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_set_user_data(void *user_data)
+{
+	(void)user_data;
+	return -ENOTSUP;
+}
 #endif /* {{ rpc.depends_on_ifdef_expr }} */
 	{% endif %}
 {% endfor %}
@@ -357,6 +385,12 @@ extern int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_serve({{ rpc.p
 int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_set_user_data(void *user_data);
 
 	{% if rpc.depends_on | length %}
+#else
+static inline int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}_set_user_data(void *user_data)
+{
+	(void)user_data;
+	return -ENOTSUP;
+}
 #endif /* {{ rpc.depends_on_ifdef_expr }} */
 	{% endif %}
 {% endfor %}
