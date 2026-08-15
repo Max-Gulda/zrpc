@@ -676,7 +676,7 @@ static int zrpc_virtio_rp_ept_cb(struct rpmsg_endpoint *ept, void *rpdata,
 
 	if (unlikely(msghdr->len + sizeof(*msghdr) != len)) {
 		VDEV_WRN(&data->vdev, "Discarding malformed message, "
-			"header indictes length %zu, got %u",
+			"header indicates length %zu, got %u",
 			(size_t)(msghdr->len + sizeof(*msghdr)),
 			(unsigned int)len);
 		/* Rpmsg API requries that RPMSG_SUCCESS is always returned */
