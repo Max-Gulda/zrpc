@@ -62,7 +62,6 @@ form_reference = lambda page: f"/en/{version}/{page}" if deploy else f"/{page}"
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
-html_css_files = ["css/custom.css"]
 html_theme_options = {"logo_only": False, "display_version": False}
 html_context = {
     "reference_links": {
