@@ -349,7 +349,8 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | m
 
 	zrpc_{{ channel.name | lower }}_heap_free(msghdr);
 	{% if rpc.want_reply %}
-	ret = ret ? ret : (int)zrpc_attr_get_u32(attr);
+	if (!ret)
+		ret = (int)zrpc_attr_get_u32(attr);
 	{% endif %}
 	return ret;
 }
@@ -543,7 +544,8 @@ int zrpc_{{ channel.name | lower }}_{{ rpc.name | lower }}({{ rpc.parameters | m
 
 	zrpc_{{ channel.name | lower }}_heap_free(msghdr);
 	{% if rpc.want_reply %}
-	ret = ret ? ret : (int)zrpc_attr_get_u32(attr);
+	if (!ret)
+		ret = (int)zrpc_attr_get_u32(attr);
 	{% endif %}
 	return ret;
 }
